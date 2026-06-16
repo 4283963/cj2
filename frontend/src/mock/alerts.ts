@@ -1,4 +1,4 @@
-import type { VehicleAlert } from '@/types/vehicle'
+import type { VehicleAlert, NotificationConfig } from '@/types/vehicle'
 
 export const mockAlerts: VehicleAlert[] = [
   {
@@ -109,6 +109,18 @@ export const mockAlerts: VehicleAlert[] = [
     ],
   },
 ]
+
+export const mockNotificationConfig: NotificationConfig = {
+  id: 1,
+  configName: '默认通知配置',
+  wechatWebhookUrl: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_HERE',
+  enabled: true,
+  enableOfflineAlert: true,
+  offlineTimeoutMinutes: 3,
+  enableTempSpikeAlert: true,
+  tempSpikeThreshold: 20.0,
+  cooldownMinutes: 10,
+}
 
 export const mockResolvedAlerts: VehicleAlert[] = [
   {

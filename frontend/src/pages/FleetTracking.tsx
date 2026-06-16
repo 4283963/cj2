@@ -3,6 +3,7 @@ import { fetchAlerts } from '@/api/fleet'
 import type { VehicleAlert } from '@/types/vehicle'
 import AlertList from '@/components/AlertList'
 import AmapView from '@/components/AmapView'
+import NotificationPanel from '@/components/NotificationPanel'
 
 function formatDateTime(isoStr: string): string {
   try {
@@ -84,13 +85,16 @@ export default function FleetTracking() {
       </div>
 
       <div className="flex-1 flex gap-4 min-h-0">
-        <div className="w-80 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex-shrink-0">
-          <AlertList
-            vehicles={vehicles}
-            selectedId={getSelectedId(selectedVehicle)}
-            onSelect={handleSelectVehicle}
-            loading={loading}
-          />
+        <div className="w-80 flex flex-col gap-4 flex-shrink-0">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex-1 min-h-0">
+            <AlertList
+              vehicles={vehicles}
+              selectedId={getSelectedId(selectedVehicle)}
+              onSelect={handleSelectVehicle}
+              loading={loading}
+            />
+          </div>
+          <NotificationPanel />
         </div>
 
         <div className="flex-1 flex flex-col gap-4 min-w-0">

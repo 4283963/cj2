@@ -87,3 +87,43 @@ VALUES
 ('SENSOR-WH007', '', 'WH-CY-007', 'WH007', '北京朝阳大望路前置仓', 'WAREHOUSE_SENSOR', 6.8, 39.92000, 116.42000, '北京市朝阳区大望路前置仓', '{"lat": 39.92000, "lng": 116.42000, "temperature": 6.8, "humidity": 62, "timestamp": "2026-06-16T13:57:00"}'::jsonb, NOW() - INTERVAL '13 minutes'),
 ('SENSOR-WH007', '', 'WH-CY-007', 'WH007', '北京朝阳大望路前置仓', 'WAREHOUSE_SENSOR', 10.2, 39.92000, 116.42000, '北京市朝阳区大望路前置仓', '{"lat": 39.92000, "lng": 116.42000, "temperature": 10.2, "humidity": 60, "timestamp": "2026-06-16T13:56:00"}'::jsonb, NOW() - INTERVAL '14 minutes'),
 ('SENSOR-WH007', '', 'WH-CY-007', 'WH007', '北京朝阳大望路前置仓', 'WAREHOUSE_SENSOR', 12.5, 39.92000, 116.42000, '北京市朝阳区大望路前置仓', '{"lat": 39.92000, "lng": 116.42000, "temperature": 12.5, "humidity": 58, "timestamp": "2026-06-16T13:55:00"}'::jsonb, NOW() - INTERVAL '15 minutes');
+
+-- ============================================================
+-- 通知策略配置表
+-- ============================================================
+CREATE TABLE IF NOT EXISTS notification_configs (
+    id SERIAL PRIMARY KEY,
+    config_name VARCHAR(200) NOT NULL,
+    wechat_webhook_url VARCHAR(500),
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    enable_offline_alert BOOLEAN NOT NULL DEFAULT TRUE,
+    offline_timeout_minutes INTEGER NOT NULL DEFAULT 3,
+    enable_temp_spike_alert BOOLEAN NOT NULL DEFAULT TRUE,
+    temp_spike_threshold DECIMAL(10,2) NOT NULL DEFAULT 20.0,
+    cooldown_minutes INTEGER NOT NULL DEFAULT 10,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+INSERT INTO notification_configs (config_name, wechat_webhook_url, enabled, enable_offline_alert, offline_timeout_minutes, enable_temp_spike_alert, temp_spike_threshold, cooldown_minutes)
+VALUES ('默认通知配置', 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_HERE', true, true, 3, true, 20.0, 10);
+
+-- ============================================================
+-- 通知推送日志表
+-- ============================================================
+CREATE TABLE IF NOT EXISTS notification_logs (
+    id SERIAL PRIMARY KEY,
+    alert_type VARCHAR(50) NOT NULL,
+    entity_id VARCHAR(100) NOT NULL,
+    entity_name VARCHAR(200),
+    alert_message VARCHAR(2000),
+    notification_channel VARCHAR(50),
+    webhook_url VARCHAR(500),
+    response_status VARCHAR(50),
+    response_body VARCHAR(2000),
+    alert_time TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notification_logs_entity ON notification_logs (entity_id, alert_type);
+CREATE INDEX IF NOT EXISTS idx_notification_logs_alert_time ON notification_logs (alert_time);

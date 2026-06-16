@@ -23,6 +23,20 @@ export interface VehicleAlert {
   track?: TrackPoint[]
 }
 
+export interface NotificationConfig {
+  id?: number
+  configName: string
+  wechatWebhookUrl: string
+  enabled: boolean
+  enableOfflineAlert: boolean
+  offlineTimeoutMinutes: number
+  enableTempSpikeAlert: boolean
+  tempSpikeThreshold: number
+  cooldownMinutes: number
+  createdAt?: string
+  updatedAt?: string
+}
+
 export interface ApiResponse<T> {
   code: number
   message: string
