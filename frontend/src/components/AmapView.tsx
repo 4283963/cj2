@@ -49,6 +49,14 @@ export default function AmapView({ selectedVehicle, vehicles, onVehicleClick }: 
     }
   }, [])
 
+  const isEqual = (a: VehicleAlert | null, b: VehicleAlert) => {
+    if (!a) return false
+    if (a.alertType === 'WAREHOUSE' && b.alertType === 'WAREHOUSE') {
+      return a.warehouseId === b.warehouseId
+    }
+    return a.vehicleId === b.vehicleId
+  }
+
   useEffect(() => {
     if (!mapReady || !mapInstanceRef.current || !AMapRef.current || vehicles.length === 0) return
 
@@ -60,12 +68,17 @@ export default function AmapView({ selectedVehicle, vehicles, onVehicleClick }: 
     const AMap = AMapRef.current
 
     vehicles.forEach((vehicle) => {
-      const isSelected = selectedVehicle?.vehicleId === vehicle.vehicleId
+      const isSelected = isEqual(selectedVehicle, vehicle)
+      const isWarehouse = vehicle.alertType === 'WAREHOUSE'
+      const markerColor = isWarehouse ? 'bg-purple-500' : 'bg-red-500'
+      const selectedColor = isWarehouse ? 'bg-purple-600' : 'bg-red-600'
+
+      const markerContentClass = isSelected ? selectedColor : markerColor
       const marker = new AMap.Marker({
         position: [vehicle.longitude, vehicle.latitude],
-        title: vehicle.plateNumber,
+        title: `${isWarehouse ? '🏭 ' : '🚚 '}${vehicle.plateNumber}`,
         content: `
-          <div class="w-9 h-9 ${isSelected ? 'bg-red-600 scale-110' : 'bg-red-500'} rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg border-2 border-white cursor-pointer hover:scale-110 transition-all">
+          <div class="w-9 h-9 ${markerContentClass} ${isSelected ? 'scale-110' : ''} rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg border-2 border-white cursor-pointer hover:scale-110 transition-all">
             ${vehicle.currentTemperature.toFixed(1)}°
           </div>
         `,
@@ -95,16 +108,18 @@ export default function AmapView({ selectedVehicle, vehicles, onVehicleClick }: 
       polylineRef.current = null
     }
 
-    if (!selectedVehicle || !selectedVehicle.track || selectedVehicle.track.length === 0) {
+    if (!selectedVehicle || !selectedVehicle.track || selectedVehicle.track.length < 2) {
       return
     }
 
     const AMap = AMapRef.current
     const path = selectedVehicle.track.map((point) => [point.lng, point.lat])
 
+    const lineColor = selectedVehicle.alertType === 'WAREHOUSE' ? '#a855f7' : '#ef4444'
+
     polylineRef.current = new AMap.Polyline({
       path: path,
-      strokeColor: '#ef4444',
+      strokeColor: lineColor,
       strokeWeight: 5,
       strokeOpacity: 0.8,
       lineJoin: 'round',
@@ -122,7 +137,7 @@ export default function AmapView({ selectedVehicle, vehicles, onVehicleClick }: 
       {!mapReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
           <div className="flex flex-col items-center gap-2">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
             <span className="text-sm text-gray-500">地图加载中...</span>
           </div>
         </div>
@@ -133,11 +148,15 @@ export default function AmapView({ selectedVehicle, vehicles, onVehicleClick }: 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-              <span className="text-xs text-gray-600">异常车辆</span>
+              <span className="text-xs text-gray-600">异常冷藏车</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-1 bg-blue-500 rounded"></div>
-              <span className="text-xs text-gray-600">行驶轨迹</span>
+              <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
+              <span className="text-xs text-gray-600">异常前置仓</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-1 bg-red-500 rounded"></div>
+              <span className="text-xs text-gray-600">温度轨迹</span>
             </div>
           </div>
         </div>

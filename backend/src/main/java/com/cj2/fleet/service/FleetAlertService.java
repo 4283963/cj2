@@ -29,30 +29,29 @@ public class FleetAlertService {
     private int consecutiveCount;
 
     private static final int TRACK_POINT_COUNT = 10;
+    private static final int HISTORY_COUNT = 50;
 
     public PageResult<FleetAlertDTO> getAlerts(int page, int size) {
-        List<String> allVehicleIds = lenglianRecordRepository.findDistinctVehicleIds();
-
         List<FleetAlertDTO> allAlerts = new ArrayList<>();
 
-        for (String vehicleId : allVehicleIds) {
-            Pageable topNPageable = PageRequest.of(0, consecutiveCount);
-            List<LenglianRecord> latestRecords = lenglianRecordRepository
-                    .findLatestRecordsByVehicleId(vehicleId, topNPageable);
-
-            if (latestRecords.size() < consecutiveCount) {
-                continue;
+        List<String> vehicleIds = lenglianRecordRepository.findDistinctVehicleIds();
+        for (String vehicleId : vehicleIds) {
+            FleetAlertDTO alert = checkAlertStatus(
+                    vehicleId,
+                    FleetAlertDTO.AlertType.VEHICLE
+            );
+            if (alert != null) {
+                allAlerts.add(alert);
             }
+        }
 
-            int consecutiveOverTemp = countConsecutiveOverTemp(latestRecords);
-
-            if (consecutiveOverTemp >= consecutiveCount) {
-                Pageable trackPageable = PageRequest.of(0, TRACK_POINT_COUNT);
-                List<LenglianRecord> trackRecords = lenglianRecordRepository
-                        .findLatestRecordsByVehicleId(vehicleId, trackPageable);
-
-                LenglianRecord latestRecord = latestRecords.get(0);
-                FleetAlertDTO alert = buildAlertDTO(latestRecord, trackRecords, consecutiveOverTemp);
+        List<String> warehouseIds = lenglianRecordRepository.findDistinctWarehouseIds();
+        for (String warehouseId : warehouseIds) {
+            FleetAlertDTO alert = checkAlertStatus(
+                    warehouseId,
+                    FleetAlertDTO.AlertType.WAREHOUSE
+            );
+            if (alert != null) {
                 allAlerts.add(alert);
             }
         }
@@ -70,24 +69,101 @@ public class FleetAlertService {
         return new PageResult<>(pageContent, page, size, totalElements);
     }
 
-    private int countConsecutiveOverTemp(List<LenglianRecord> records) {
-        int count = 0;
+    private FleetAlertDTO checkAlertStatus(String entityId, FleetAlertDTO.AlertType type) {
+        Pageable historyPageable = PageRequest.of(0, HISTORY_COUNT);
+        Pageable trackPageable = PageRequest.of(0, TRACK_POINT_COUNT);
+
+        List<LenglianRecord> historyRecords;
+        List<LenglianRecord> trackRecords;
+
+        if (type == FleetAlertDTO.AlertType.VEHICLE) {
+            historyRecords = lenglianRecordRepository.findLatestRecordsByVehicleId(entityId, historyPageable);
+            trackRecords = lenglianRecordRepository.findLatestRecordsByVehicleId(entityId, trackPageable);
+        } else {
+            historyRecords = lenglianRecordRepository.findLatestRecordsByWarehouseId(entityId, historyPageable);
+            trackRecords = lenglianRecordRepository.findLatestRecordsByWarehouseId(entityId, trackPageable);
+        }
+
+        if (historyRecords.size() < consecutiveCount) {
+            return null;
+        }
+
+        boolean isInAlert = determineAlertStatus(historyRecords);
+
+        if (!isInAlert) {
+            return null;
+        }
+
+        int[] counts = calculateConsecutiveCounts(historyRecords);
+        int consecutiveOverTemp = counts[0];
+        int consecutiveNormal = counts[1];
+
+        LenglianRecord latestRecord = historyRecords.get(0);
+        return buildAlertDTO(latestRecord, trackRecords, consecutiveOverTemp, consecutiveNormal, type);
+    }
+
+    private boolean determineAlertStatus(List<LenglianRecord> records) {
+        int i = 0;
+        int n = records.size();
+
+        while (i < n) {
+            boolean currentOverTemp = isOverTemperature(records.get(i));
+
+            int consecutiveCountOfCurrentState = 0;
+            int j = i;
+            while (j < n && isOverTemperature(records.get(j)) == currentOverTemp) {
+                consecutiveCountOfCurrentState++;
+                j++;
+            }
+
+            if (consecutiveCountOfCurrentState >= this.consecutiveCount) {
+                return currentOverTemp;
+            }
+
+            i = j;
+        }
+
+        return false;
+    }
+
+    private int[] calculateConsecutiveCounts(List<LenglianRecord> records) {
+        int consecutiveOverTemp = 0;
+        int consecutiveNormal = 0;
+
+        boolean latestIsOverTemp = isOverTemperature(records.get(0));
+
         for (LenglianRecord record : records) {
-            if (record.getTemperature().compareTo(temperatureThreshold) > 0) {
-                count++;
+            boolean currentOverTemp = isOverTemperature(record);
+
+            if (currentOverTemp == latestIsOverTemp) {
+                if (currentOverTemp) {
+                    consecutiveOverTemp++;
+                } else {
+                    consecutiveNormal++;
+                }
             } else {
                 break;
             }
         }
-        return count;
+
+        return new int[]{consecutiveOverTemp, consecutiveNormal};
     }
 
-    private FleetAlertDTO buildAlertDTO(LenglianRecord latestRecord, List<LenglianRecord> records, int consecutiveCount) {
+    private boolean isOverTemperature(LenglianRecord record) {
+        return record.getTemperature() != null
+                && record.getTemperature().compareTo(temperatureThreshold) > 0;
+    }
+
+    private FleetAlertDTO buildAlertDTO(LenglianRecord latestRecord, List<LenglianRecord> records,
+                                        int consecutiveOverTemp, int consecutiveNormal,
+                                        FleetAlertDTO.AlertType type) {
         FleetAlertDTO dto = new FleetAlertDTO();
+        dto.setAlertType(type);
         dto.setVehicleId(latestRecord.getVehicleId());
         dto.setPlateNumber(latestRecord.getPlateNumber());
         dto.setCurrentTemperature(latestRecord.getTemperature());
-        dto.setConsecutiveOverTempCount(consecutiveCount);
+        dto.setConsecutiveOverTempCount(consecutiveOverTemp);
+        dto.setConsecutiveNormalCount(consecutiveNormal);
         dto.setLatitude(latestRecord.getLatitude());
         dto.setLongitude(latestRecord.getLongitude());
         dto.setLocation(latestRecord.getLocation());

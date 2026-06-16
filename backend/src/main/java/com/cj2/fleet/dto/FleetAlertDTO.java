@@ -8,6 +8,13 @@ import java.util.List;
 @Data
 public class FleetAlertDTO {
 
+    public enum AlertType {
+        VEHICLE,
+        WAREHOUSE
+    }
+
+    private AlertType alertType;
+
     private String vehicleId;
 
     private String plateNumber;
@@ -15,6 +22,8 @@ public class FleetAlertDTO {
     private BigDecimal currentTemperature;
 
     private Integer consecutiveOverTempCount;
+
+    private Integer consecutiveNormalCount;
 
     private BigDecimal latitude;
 

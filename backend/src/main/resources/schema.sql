@@ -75,3 +75,15 @@ VALUES
 ('GPS-004', 'V004', '京F·88888', 'WH006', '北京通州前置仓', 'GPS_TEMPERATURE', 3.2, 39.90123, 116.657428, '北京市通州区', '{"lat": 39.90123, "lng": 116.657428, "temperature": 3.2, "speed": 40, "timestamp": "2026-06-16T14:00:00"}'::jsonb, NOW() - INTERVAL '1 hour'),
 ('GPS-004', 'V004', '京F·88888', 'WH006', '北京通州前置仓', 'GPS_TEMPERATURE', 2.8, 39.90223, 116.658428, '北京市通州区', '{"lat": 39.90223, "lng": 116.658428, "temperature": 2.8, "speed": 42, "timestamp": "2026-06-16T14:01:00"}'::jsonb, NOW() - INTERVAL '59 minutes'),
 ('GPS-004', 'V004', '京F·88888', 'WH006', '北京通州前置仓', 'GPS_TEMPERATURE', 3.0, 39.90323, 116.659428, '北京市通州区', '{"lat": 39.90323, "lng": 116.659428, "temperature": 3.0, "speed": 45, "timestamp": "2026-06-16T14:02:00"}'::jsonb, NOW() - INTERVAL '58 minutes');
+
+-- WH007 前置仓：曾经超温，现在已连续3次恢复正常（4°C），验证报警解除逻辑
+-- 历史记录：12.5° → 10.2° → 6.8° → 4.5° → 4.2° → 4.0°
+-- 最近3条都是正常的（<=8°C），所以应该已经解除报警，不会出现在告警列表中
+INSERT INTO lenglian_records (device_id, vehicle_id, plate_number, warehouse_id, warehouse_name, device_type, temperature, latitude, longitude, location, telemetry, record_time)
+VALUES
+('SENSOR-WH007', '', 'WH-CY-007', 'WH007', '北京朝阳大望路前置仓', 'WAREHOUSE_SENSOR', 4.0, 39.92000, 116.42000, '北京市朝阳区大望路前置仓', '{"lat": 39.92000, "lng": 116.42000, "temperature": 4.0, "humidity": 65, "timestamp": "2026-06-16T14:00:00"}'::jsonb, NOW() - INTERVAL '10 minutes'),
+('SENSOR-WH007', '', 'WH-CY-007', 'WH007', '北京朝阳大望路前置仓', 'WAREHOUSE_SENSOR', 4.2, 39.92000, 116.42000, '北京市朝阳区大望路前置仓', '{"lat": 39.92000, "lng": 116.42000, "temperature": 4.2, "humidity": 64, "timestamp": "2026-06-16T13:59:00"}'::jsonb, NOW() - INTERVAL '11 minutes'),
+('SENSOR-WH007', '', 'WH-CY-007', 'WH007', '北京朝阳大望路前置仓', 'WAREHOUSE_SENSOR', 4.5, 39.92000, 116.42000, '北京市朝阳区大望路前置仓', '{"lat": 39.92000, "lng": 116.42000, "temperature": 4.5, "humidity": 63, "timestamp": "2026-06-16T13:58:00"}'::jsonb, NOW() - INTERVAL '12 minutes'),
+('SENSOR-WH007', '', 'WH-CY-007', 'WH007', '北京朝阳大望路前置仓', 'WAREHOUSE_SENSOR', 6.8, 39.92000, 116.42000, '北京市朝阳区大望路前置仓', '{"lat": 39.92000, "lng": 116.42000, "temperature": 6.8, "humidity": 62, "timestamp": "2026-06-16T13:57:00"}'::jsonb, NOW() - INTERVAL '13 minutes'),
+('SENSOR-WH007', '', 'WH-CY-007', 'WH007', '北京朝阳大望路前置仓', 'WAREHOUSE_SENSOR', 10.2, 39.92000, 116.42000, '北京市朝阳区大望路前置仓', '{"lat": 39.92000, "lng": 116.42000, "temperature": 10.2, "humidity": 60, "timestamp": "2026-06-16T13:56:00"}'::jsonb, NOW() - INTERVAL '14 minutes'),
+('SENSOR-WH007', '', 'WH-CY-007', 'WH007', '北京朝阳大望路前置仓', 'WAREHOUSE_SENSOR', 12.5, 39.92000, 116.42000, '北京市朝阳区大望路前置仓', '{"lat": 39.92000, "lng": 116.42000, "temperature": 12.5, "humidity": 58, "timestamp": "2026-06-16T13:55:00"}'::jsonb, NOW() - INTERVAL '15 minutes');

@@ -1,3 +1,5 @@
+export type AlertType = 'VEHICLE' | 'WAREHOUSE'
+
 export interface TrackPoint {
   lng: number
   lat: number
@@ -6,10 +8,12 @@ export interface TrackPoint {
 }
 
 export interface VehicleAlert {
+  alertType: AlertType
   vehicleId: string
   plateNumber: string
   currentTemperature: number
   consecutiveOverTempCount: number
+  consecutiveNormalCount: number
   latitude: number
   longitude: number
   location: string

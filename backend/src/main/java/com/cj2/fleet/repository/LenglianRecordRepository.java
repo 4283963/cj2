@@ -16,10 +16,10 @@ public interface LenglianRecordRepository extends JpaRepository<LenglianRecord, 
     @Query("SELECT r FROM LenglianRecord r WHERE r.vehicleId = :vehicleId ORDER BY r.recordTime DESC")
     List<LenglianRecord> findTopNByVehicleIdOrderByRecordTimeDesc(@Param("vehicleId") String vehicleId, Pageable pageable);
 
-    @Query("SELECT DISTINCT r.vehicleId FROM LenglianRecord r")
+    @Query("SELECT DISTINCT r.vehicleId FROM LenglianRecord r WHERE r.vehicleId IS NOT NULL")
     Page<String> findDistinctVehicleIds(Pageable pageable);
 
-    @Query("SELECT DISTINCT r.vehicleId FROM LenglianRecord r")
+    @Query("SELECT DISTINCT r.vehicleId FROM LenglianRecord r WHERE r.vehicleId IS NOT NULL")
     List<String> findDistinctVehicleIds();
 
     @Query("SELECT r FROM LenglianRecord r WHERE r.vehicleId = :vehicleId ORDER BY r.recordTime DESC")
@@ -29,4 +29,12 @@ public interface LenglianRecordRepository extends JpaRepository<LenglianRecord, 
     List<LenglianRecord> findByVehicleIdInOrderByRecordTimeDesc(@Param("vehicleIds") List<String> vehicleIds);
 
     long countByVehicleId(String vehicleId);
+
+    @Query("SELECT DISTINCT r.warehouseId FROM LenglianRecord r WHERE r.warehouseId IS NOT NULL")
+    List<String> findDistinctWarehouseIds();
+
+    @Query("SELECT r FROM LenglianRecord r WHERE r.warehouseId = :warehouseId ORDER BY r.recordTime DESC")
+    List<LenglianRecord> findLatestRecordsByWarehouseId(@Param("warehouseId") String warehouseId, Pageable pageable);
+
+    long countByWarehouseId(String warehouseId);
 }
